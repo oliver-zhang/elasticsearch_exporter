@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
+	comm "github.com/oliver-zhang/elasticsearch_exporter/common"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
-	"context"
-
 	"github.com/go-kit/kit/log/level"
-	"github.com/justwatchcom/elasticsearch_exporter/collector"
-	"github.com/justwatchcom/elasticsearch_exporter/pkg/clusterinfo"
+	"github.com/oliver-zhang/elasticsearch_exporter/collector"
+	"github.com/oliver-zhang/elasticsearch_exporter/pkg/clusterinfo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -23,6 +23,12 @@ func main() {
 		listenAddress = kingpin.Flag("web.listen-address",
 			"Address to listen on for web interface and telemetry.").
 			Default(":9114").Envar("WEB_LISTEN_ADDRESS").String()
+		username = kingpin.Flag("es.username",
+			"elasticsearch cluster http username").
+			Default(":admin").String()
+		password = kingpin.Flag("es.password",
+			"elasticsearch cluster http password").
+			Default(":admin").String()
 		metricsPath = kingpin.Flag("web.telemetry-path",
 			"Path under which to expose metrics.").
 			Default("/metrics").Envar("WEB_TELEMETRY_PATH").String()
@@ -83,7 +89,7 @@ func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	logger := getLogger(*logLevel, *logOutput, *logFormat)
+	logger := comm.GetLogger(*logLevel, *logOutput, *logFormat)
 
 	esURL, err := url.Parse(*esURI)
 	if err != nil {
@@ -95,13 +101,16 @@ func main() {
 	}
 
 	// returns nil if not provided and falls back to simple TCP.
-	tlsConfig := createTLSConfig(*esCA, *esClientCert, *esClientPrivateKey, *esInsecureSkipVerify)
+	tlsConfig := comm.CreateTLSConfig(*esCA, *esClientCert, *esClientPrivateKey, *esInsecureSkipVerify)
 
 	httpClient := &http.Client{
 		Timeout: *esTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
-			Proxy:           http.ProxyFromEnvironment,
+			Proxy: func(request *http.Request) (i *url.URL, e error) {
+				request.SetBasicAuth(*username, *password)
+				return nil, nil
+			},
 		},
 	}
 

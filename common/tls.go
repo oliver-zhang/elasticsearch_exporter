@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/tls"
@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func createTLSConfig(pemFile, pemCertFile, pemPrivateKeyFile string, insecureSkipVerify bool) *tls.Config {
+func CreateTLSConfig(pemFile, pemCertFile, pemPrivateKeyFile string, insecureSkipVerify bool) *tls.Config {
 	tlsConfig := tls.Config{}
 	if insecureSkipVerify {
 		// pem settings are irrelevant if we're skipping verification anyway

@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func getLogger(loglevel, logoutput, logfmt string) log.Logger {
+func GetLogger(loglevel, logoutput, logfmt string) log.Logger {
 	var out *os.File
 	switch strings.ToLower(logoutput) {
 	case "stderr":
